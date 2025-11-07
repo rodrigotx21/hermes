@@ -1,6 +1,6 @@
 ktor:
   application:
     modules:
-      - pt.ApplicationKt.module
+      - pt.hermes.NodeKt.module
   deployment:
     port: 8080
