@@ -4,9 +4,10 @@ val logback_version: String by project
 plugins {
     kotlin("jvm") version "2.2.20"
     id("io.ktor.plugin") version "3.3.1"
+    kotlin("plugin.serialization") version "2.2.20"
 }
 
-group = "pt"
+group = "pt.hermes"
 version = "0.0.1"
 
 application {
@@ -21,4 +22,6 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.12")
 }
