@@ -22,7 +22,7 @@ fun Application.module() {
 
     // Initialize services
     val blockchain = BlockchainService()
-    val network = NetworkService(peers, blockchain)
+    val network = NetworkService(peers)
 
     configureRouting(
         blockchain,
