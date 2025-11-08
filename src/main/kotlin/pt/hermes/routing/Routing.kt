@@ -21,9 +21,11 @@ fun Application.configureRouting(
         }
 
         post("/connect") {
-            val peer = call.receive<String>()
-            network.addPeer(peer)
-            call.respond(HttpStatusCode.OK)
+            val address = call.receive<String>()
+            network.addPeer(address)
+
+            val peers = network.peers
+            call.respond(HttpStatusCode.OK, peers)
         }
 
         get("/chain") {

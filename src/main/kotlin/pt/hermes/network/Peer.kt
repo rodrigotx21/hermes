@@ -10,7 +10,6 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 val client = HttpClient(CIO) {
     install(ContentNegotiation) {
