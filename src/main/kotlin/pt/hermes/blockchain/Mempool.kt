@@ -1,6 +1,7 @@
 package pt.hermes.blockchain
 
 import org.slf4j.LoggerFactory
+import pt.hermes.exception.DuplicateTransaction
 import java.util.concurrent.ConcurrentHashMap
 
 class Mempool {
@@ -24,7 +25,7 @@ class Mempool {
         if (transactions.putIfAbsent(transaction.hash, transaction) == null) {
             log.info("Transaction added to mempool: ${transaction.hash}")
         } else {
-            log.info("Transaction already exists in mempool: ${transaction.hash}")
+            throw DuplicateTransaction(transaction.hash)
         }
     }
 
