@@ -16,6 +16,8 @@ application {
 
 dependencies {
     implementation("io.ktor:ktor-server-core-jvm")
+    implementation("io.ktor:ktor-client-core")
+    implementation("io.ktor:ktor-client-cio")
     implementation("io.ktor:ktor-server-netty")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-core")
