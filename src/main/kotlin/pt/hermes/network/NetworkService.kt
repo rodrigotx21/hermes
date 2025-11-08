@@ -6,16 +6,17 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
 class NetworkService(
+    val address: String,
     seedAddresses: List<String> = emptyList()
 ) {
     private val log = LoggerFactory.getLogger(NetworkService::class.java)
 
-    val peers: MutableSet<Peer> = seedAddresses.map { Peer(it) }.toMutableSet()
+    val peers = mutableSetOf<Peer>()
 
 
     init {
         log.info("Initializing network service")
-        runBlocking { connect() }
+        runBlocking { connect(seedAddresses) }
     }
 
     /**
@@ -25,22 +26,35 @@ class NetworkService(
      * If a connection fails, the peer is removed from the list.
      * If no peers are found, the node will act as the first one in the network.
      */
-    private suspend fun connect() {
-        val possiblePeers = peers.toList()
-        var found = false
+    private suspend fun connect(addresses: List<String>) {
+        val seen = peers.map { peer -> peer.address }.toMutableSet()
+        val possibleAddresses = ArrayDeque(addresses)
 
-        for (peer in possiblePeers) {
+        while (possibleAddresses.isNotEmpty()) {
+            val peerAddress = possibleAddresses.removeFirst()
+            if (peerAddress in seen || peerAddress == address) {
+                continue
+            }
+            seen.add(peerAddress)
+
             try {
-                peer.connect()
-
+                // Attempt to connect to the peer
+                val peer = Peer(address, peerAddress)
+                val newAddr = peer.connect().toMutableSet<Peer>()
                 log.debug("Connected to peer at ${peer.address}")
-                found = true
+
+                // Add new addresses to the queue
+                newAddr.removeIf { seen.contains(it.address) }
+                possibleAddresses.addAll(newAddr.map { it.address })
+
+                // Add the successfully connected peer
+                peers.add(peer)
             } catch (e: Exception) {
-                peers.remove(peer)
-                log.warn("Failed to connect to peer at ${peer.address}: ${e.message}")
+                log.warn("Failed to connect to peer at $peerAddress: ${e.message}")
             }
         }
 
+        val found = peers.isNotEmpty()
         if (found) {
             log.info("Connected to peers")
         } else {
@@ -54,9 +68,13 @@ class NetworkService(
      * @param address the address of the peer to add
      */
     fun addPeer(address: String) {
+        if (address == this.address) {
+            return
+        }
+
         val peer: Peer
         try {
-            peer = Peer(address) // Validate address
+            peer = Peer(this.address, address) // Validate address
         } catch (e: IllegalArgumentException) {
             log.warn("Error adding peer: ${e.message}")
             return
