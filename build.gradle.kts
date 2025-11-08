@@ -1,30 +1,42 @@
 val kotlin_version: String by project
 val logback_version: String by project
+val ktor_version: String by project
 
 plugins {
     kotlin("jvm") version "2.2.20"
-    id("io.ktor.plugin") version "3.3.1"
     kotlin("plugin.serialization") version "2.2.20"
+    id("io.ktor.plugin") version "3.3.1"
 }
 
 group = "pt.hermes"
 version = "0.0.1"
 
 application {
-    mainClass = "io.ktor.server.netty.EngineMain"
+    mainClass.set("io.ktor.server.netty.EngineMain")
+}
+
+repositories {
+    mavenCentral()
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core-jvm")
-    implementation("io.ktor:ktor-client-core")
-    implementation("io.ktor:ktor-client-cio")
-    implementation("io.ktor:ktor-server-netty")
+    // Ktor Server
+    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-netty:$ktor_version")
+    implementation("io.ktor:ktor-server-config-yaml:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
+    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
+
+    // Ktor Client
+    implementation("io.ktor:ktor-client-core:$ktor_version")
+    implementation("io.ktor:ktor-client-cio:$ktor_version")
+    implementation("io.ktor:ktor-serialization:$ktor_version")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
+
+    // Logging
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("io.ktor:ktor-server-core")
-    implementation("io.ktor:ktor-server-config-yaml")
-    implementation("io.ktor:ktor-client-encoding:3.3.1")
-    testImplementation("io.ktor:ktor-server-test-host")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.12")
+
+    // Testing
+    testImplementation(kotlin("test-junit", kotlin_version))
 }
