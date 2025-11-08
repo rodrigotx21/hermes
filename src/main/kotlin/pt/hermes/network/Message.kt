@@ -1,0 +1,16 @@
+package pt.hermes.network
+
+import kotlinx.serialization.Serializable
+import pt.hermes.blockchain.Block
+
+@Serializable
+sealed class Message {
+    @Serializable
+    data class NewBlock(val block: Block) : Message()
+
+    @Serializable
+    data class RequestChain(val fromIndex: Int) : Message()
+
+    @Serializable
+    data class ChainResponse(val chain: List<Block>) : Message()
+}
