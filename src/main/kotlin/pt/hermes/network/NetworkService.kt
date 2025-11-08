@@ -1,5 +1,6 @@
 package pt.hermes.network
 
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import pt.hermes.blockchain.BlockchainService
 
@@ -9,36 +10,34 @@ class NetworkService(
 ) {
     private val log = LoggerFactory.getLogger(NetworkService::class.java)
 
-    val peers: MutableSet<Peer> = seedAddresses.map {
-        if (!it.startsWith("http://") && !it.startsWith("https://")) {
-            throw IllegalArgumentException("Invalid peer address: $it")
-        }
-
-        return@map Peer(it)
-    }.toMutableSet()
+    val peers: MutableSet<Peer> = seedAddresses.map { Peer(it) }.toMutableSet()
 
 
     init {
         log.info("Initializing network service")
-        connect()
+        runBlocking { connect() }
     }
 
     /**
      * Connects to known peers.
      *
-     * Iterates the `peers` list and logs a message for each peer indicating a successful connection.
-     * NOTE: this implementation currently only logs the connection and does not perform any real network I/O.
+     * Tries to connect to each given peer.
+     * If a connection fails, the peer is removed from the list.
+     * If no peers are found, the node will act as the first one in the network.
      */
-    private fun connect() {
+    private suspend fun connect() {
         val possiblePeers = peers.toList()
         var found = false
 
         for (peer in possiblePeers) {
             try {
+                peer.connect()
+
                 log.debug("Connected to peer at ${peer.address}")
                 found = true
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 peers.remove(peer)
+                log.warn("Failed to connect to peer at ${peer.address}: ${e.message}")
             }
         }
 
