@@ -17,12 +17,17 @@ fun Application.module() {
     install(ContentNegotiation) { json() }
 
     // Network configuration
+    val deploymentConfig = environment.config.config("ktor.deployment")
+    val host = deploymentConfig.property("host").getString()
+    val port = deploymentConfig.property("port").getString().toIntOrNull()
+    val address = "http://${ if (port == null) host else "$host:$port" }"
+
     val networkConfig = environment.config.config("ktor.network")
     val peers = networkConfig.property("peers").getList()
 
     // Initialize services
     val blockchain = BlockchainService()
-    val network = NetworkService(peers)
+    val network = NetworkService(address, peers)
 
     configureRouting(
         blockchain,
