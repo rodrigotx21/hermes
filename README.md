@@ -1,40 +1,88 @@
-# hermes
+Absolutely — that’s a great idea. A clean, professional **README.md** will give your project identity and clarity for collaborators.
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+Here’s how I’d structure it conceptually for *Hermes*, your Kotlin blockchain:
 
-Here are some useful links to get you started:
+---
 
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need
-  to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
+# **Hermes 🕊️**
+*A lightweight, educational blockchain implementation in Kotlin.*
 
-## Features
+---
 
-Here's a list of features included in this project:
+## **Overview**
 
-| Name                                               | Description                                                 |
-| ----------------------------------------------------|------------------------------------------------------------- |
-| [Routing](https://start.ktor.io/p/routing-default) | Allows to define structured routes and associated handlers. |
+**Hermes** is a minimal, modular blockchain built with **Kotlin** and **Ktor**, designed to demonstrate core distributed ledger concepts such as:
+- Peer-to-peer networking
+- Proof-of-Work consensus
+- Transaction propagation and mempool management
+- Block and chain validation
+- Merkle-tree hashing for transaction integrity
 
-## Building & Running
+The focus is clean architecture, readability, and educational value — not production mining.
 
-To build or run the project, use one of the following tasks:
+---
 
-| Task                                    | Description                                                          |
-| -----------------------------------------|---------------------------------------------------------------------- |
-| `./gradlew test`                        | Run the tests                                                        |
-| `./gradlew build`                       | Build everything                                                     |
-| `./gradlew buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
-| `./gradlew buildImage`                  | Build the docker image to use with the fat JAR                       |
-| `./gradlew publishImageToLocalRegistry` | Publish the docker image locally                                     |
-| `./gradlew run`                         | Run the server                                                       |
-| `./gradlew runDocker`                   | Run using the local docker image                                     |
-
-If the server starts successfully, you'll see the following output:
+## **Architecture**
 
 ```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
+hermes/
+ ├─ blockchain/     → Core data structures (Block, Chain, Transaction, Mempool)
+ ├─ consensus/      → Consensus rules (PoW, chain replacement)
+ ├─ network/        → P2P connectivity and message propagation
+ ├─ routing/        → Ktor HTTP & WebSocket API endpoints
+ ├─ util/           → Utility helpers (Merkle hashing, serialization)
+ └─ Node.kt         → Entry point that wires all modules together
 ```
 
+Each node runs its own embedded Ktor server and can connect to other peers to exchange blocks and transactions.
+
+---
+
+## **Features**
+
+- **Proof of Work** consensus with adjustable difficulty
+- **Mempool** for pending transactions
+- **Merkle Root** computation for transaction integrity
+- **P2P Communication** via HTTP/WebSockets
+- **Modular Routing** for API separation (chain, peers, transactions, mining)
+- **JSON API** powered by Ktor’s `ContentNegotiation` + `kotlinx.serialization`
+
+---
+
+## **Run a Local Network**
+
+### **Build**
+```bash
+./gradlew build
+```
+
+### **Start a node**
+```bash
+java -jar build/libs/hermes.jar
+```
+
+Nodes will automatically try to connect and sync their chains.
+
+---
+
+## **Merkle Root Example**
+
+Each block computes a Merkle root from its transactions:
+
+```
+Tx1   Tx2   Tx3   Tx4
+ |      |     |     |
+ h1     h2    h3    h4
+  \    /       \   /
+   h12          h34
+       \       /
+        Merkle Root
+```
+
+This root ensures the block’s proof of work commits to every transaction within it.
+
+---
+
+## **License**
+
+MIT License © Rodrigo Teixeira
