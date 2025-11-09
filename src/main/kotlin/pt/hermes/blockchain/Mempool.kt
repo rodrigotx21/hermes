@@ -6,13 +6,13 @@ import java.util.concurrent.ConcurrentHashMap
 
 class Mempool {
     private val log = LoggerFactory.getLogger(Mempool::class.java)
-    private val transactions = ConcurrentHashMap<String, Transaction>()
+    private val _transactions = ConcurrentHashMap<String, Transaction>()
 
     /**
      * Returns the number of transactions currently in the mempool.
      * @return the size of the mempool
      */
-    fun size(): Int = transactions.size
+    fun size(): Int = _transactions.size
 
     /**
      * Adds a transaction to the mempool if it does not already exist.
@@ -20,9 +20,10 @@ class Mempool {
      * This operation is thread-safe because the mempool uses a `ConcurrentHashMap`.
      *
      * @param transaction the Transaction to add; its `hash` is used as the key
+     * @throws DuplicateTransaction if a transaction with the same hash already exists
      */
-    fun addTransaction(transaction: Transaction) {
-        if (transactions.putIfAbsent(transaction.hash, transaction) == null) {
+    fun add(transaction: Transaction) {
+        if (_transactions.putIfAbsent(transaction.hash, transaction) == null) {
             log.info("Transaction added to mempool: ${transaction.hash}")
         } else {
             throw DuplicateTransaction(transaction.hash)
@@ -40,8 +41,8 @@ class Mempool {
      *
      * @param hash the hash of the transaction to remove
      */
-    fun removeTransaction(hash: String) {
-        if (transactions.remove(hash) != null) {
+    fun remove(hash: String) {
+        if (_transactions.remove(hash) != null) {
             log.info("Transaction removed from mempool: $hash")
         } else {
             log.info("Transaction not found in mempool: $hash")
@@ -49,21 +50,42 @@ class Mempool {
     }
 
     /**
-     * Returns a list of pending transactions currently stored in the mempool.
+     * Retrieves all transaction hashes currently in the mempool.
      *
-     * This method is thread-safe because the mempool uses a `ConcurrentHashMap`.
-     *
-     * @return a list of pending [Transaction]s; ordering is not guaranteed
+     * @return a set of transaction hashes
      */
-    fun getPendingTransactions(): List<Transaction> {
-        return transactions.values.toList()
+    val transactions: Map<String, Transaction>
+        get() = _transactions
+
+    /**
+     * Retrieves transactions from the mempool corresponding to the provided hashes.
+     *
+     * @param hashes a set of transaction hashes to retrieve
+     * @return a map of transaction hashes to Transaction objects
+     */
+    fun getTransactions(hashes: Set<String>): Map<String, Transaction> {
+        return _transactions.filterKeys { it in hashes }
+    }
+
+    /**
+     * Identifies which transactions from the provided set are missing in the mempool.
+     *
+     * @param newTransactions a set of transaction hashes to check
+     * @return a set of transaction hashes that are missing from the mempool
+     */
+    fun getMissingTransactions(newTransactions: Set<String>): Set<String> {
+        // Find missing transactions
+        val missingTransactions = newTransactions.filter { it !in _transactions.keys }
+
+        // Get missing hashes
+        return missingTransactions.toSet()
     }
 
     /**
      * Clears all pending transactions from the mempool.
      */
     fun clearPendingTransactions() {
-        transactions.clear()
+        _transactions.clear()
         log.info("Mempool cleared")
     }
 }
