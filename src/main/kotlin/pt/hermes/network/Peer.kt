@@ -10,6 +10,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import pt.hermes.blockchain.Transaction
 
 val client = HttpClient(CIO) {
     install(ContentNegotiation) {
@@ -28,15 +29,15 @@ data class Peer(
         }
     }
 
-    suspend fun connect(): List<Peer> {
+    suspend fun connect(): MutableSet<String> {
         val response = client.post("$address/connect") {
             setBody(myAddress)
             expectSuccess = true
-        }
+        }.body<ConnectionResponse>()
 
-        val newPeersAddresses = response.body<List<Peer>>()
+        val peers = response.peers.toMutableSet()
 
-        return newPeersAddresses
+        return peers
     }
 
     suspend fun send(message: Message) {
@@ -45,5 +46,27 @@ data class Peer(
             setBody(message)
             expectSuccess = true
         }
+    }
+
+    /**
+     * Retrieves the set of pending transaction hashes from the peer.
+     *
+     * @return A set of transaction hashes.
+     */
+    suspend fun getPendingTransactions(): Set<String> {
+        val response = client.get("$address/transactions") {
+            expectSuccess = true
+        }.body<Set<String>>()
+
+        return response
+    }
+
+    suspend fun getTransactions(hashes: Set<String>): Map<String, Transaction> {
+        val response = client.get("$address/transactions") {
+            setBody(hashes)
+            expectSuccess = true
+        }.body<Map<String, Transaction>>()
+
+        return response
     }
 }
