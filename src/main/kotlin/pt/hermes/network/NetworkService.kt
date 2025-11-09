@@ -1,6 +1,8 @@
 package pt.hermes.network
 
-import kotlinx.coroutines.coroutineScope
+import io.ktor.util.collections.ConcurrentSet
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -40,15 +42,12 @@ class NetworkService(
             try {
                 // Attempt to connect to the peer
                 val peer = Peer(address, peerAddress)
-                val newAddr = peer.connect().toMutableSet<Peer>()
+                val newAddr = peer.connect()
                 log.debug("Connected to peer at ${peer.address}")
 
                 // Add new addresses to the queue
-                newAddr.removeIf { seen.contains(it.address) }
-                possibleAddresses.addAll(newAddr.map { it.address })
-
-                // Add the successfully connected peer
-                peers.add(peer)
+                newAddr.removeIf { seen.contains(address) }
+                possibleAddresses.addAll(newAddr.map { address })
             } catch (e: Exception) {
                 log.warn("Failed to connect to peer at $peerAddress: ${e.message}")
             }
@@ -92,18 +91,24 @@ class NetworkService(
      *
      * @param message the [Message] to send to all peers
      */
-    suspend fun broadcast(message: Message) {
-        coroutineScope {
-            peers.forEach { peer ->
-                launch {
-                    try {
-                        peer.send(message)
-                    } catch (e: Exception) {
-                        log.warn("Failed to send message to peer at ${peer.address}: ${e.message}")
-                        peers.remove(peer)
-                    }
+    fun broadcast(message: Message) = CoroutineScope(Dispatchers.IO).launch {
+        val failedPeers = ConcurrentSet<Peer>()
+
+        val jobs = peers.map { peer ->
+            launch {
+                try {
+                    peer.send(message)
+                } catch (e: Exception) {
+                    log.warn("Failed to send message to peer ${peer.address}: ${e.message}")
+                    failedPeers.add(peer)
                 }
             }
         }
+
+        // Wait for all sends to complete
+        jobs.forEach { it.join() }
+
+        // Remove failed peers after all sends complete
+        peers.removeAll(failedPeers)
     }
 }
