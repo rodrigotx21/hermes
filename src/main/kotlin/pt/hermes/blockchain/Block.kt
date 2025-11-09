@@ -3,7 +3,6 @@ package pt.hermes.blockchain
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import pt.hermes.consensus.ConsensusType
-import pt.hermes.exception.InvalidBlockException
 import pt.hermes.exception.InvalidBlockPOWException
 
 @Serializable
