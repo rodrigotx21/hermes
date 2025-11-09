@@ -6,6 +6,7 @@ import pt.hermes.blockchain.BlockchainService
 import pt.hermes.routing.configureRouting
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.contentnegotiation.*
+import pt.hermes.consensus.ConsensusService
 import pt.hermes.network.NetworkService
 
 fun main(args: Array<String>) {
@@ -26,11 +27,13 @@ fun Application.module() {
     val peers = networkConfig.property("peers").getList()
 
     // Initialize services
-    val blockchain = BlockchainService()
     val network = NetworkService(address, peers)
+    val consensus = ConsensusService()
+    val blockchain = BlockchainService(network, consensus)
 
     configureRouting(
         blockchain,
-        network
+        network,
+        consensus
     )
 }
