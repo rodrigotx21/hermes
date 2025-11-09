@@ -1,6 +1,10 @@
 package pt.hermes.blockchain
 
 import kotlinx.serialization.Serializable
+import org.slf4j.LoggerFactory
+import pt.hermes.consensus.ConsensusType
+import pt.hermes.exception.InvalidBlockException
+import pt.hermes.exception.InvalidBlockPOWException
 
 @Serializable
 data class Block(
@@ -8,10 +12,25 @@ data class Block(
     val timestamp: Long,
     val previousHash: String? = null,
     val transactions: List<Transaction>,
-    val nonce: Long,
-    val hash: String
+    val transactionsHash: String = HASH.merkleRoot(transactions.map { it.hash }),
+    val nonce: Long = 0,
+    val hash: String = calculateHash(index, timestamp, previousHash, transactions, nonce)
 ) {
+    fun validateStructure() {
+        if (index < 0)
+            throw IllegalStateException("Block index cannot be negative")
+        if (timestamp <= 0 || timestamp > System.currentTimeMillis())
+            throw IllegalStateException("Invalid block timestamp")
+        if (transactions.isEmpty() && index != 0)
+            throw IllegalStateException("Block must contain at least one transaction")
+        val computedHash = calculateHash(index, timestamp, previousHash, transactions, nonce)
+        if (computedHash != hash) {
+            throw IllegalStateException("Block hash is invalid. Expected $computedHash but found $hash")
+        }
+    }
+
     companion object {
+        private val log = LoggerFactory.getLogger(Block::class.java)
         /**
          * Creates a new Block instance by computing its hash from the provided core fields.
          *
@@ -51,7 +70,39 @@ data class Block(
                     previousHash +
                     transactions.joinToString { it.toString() } +
                     nonce.toString()
-            return SHA256.hash(input)
+            return HASH.sha256(input)
+        }
+
+        /**
+         * Mines the genesis block (the first block in the blockchain).
+         *
+         * This function repeatedly generates nonces and computes hashes until
+         * it finds a valid genesis block that satisfies the proof-of-work criteria.
+         *
+         * @return the mined genesis [Block]
+         */
+        fun mineGenesisBlock(): Block {
+            val block = Block(
+                index = 0,
+                timestamp = System.currentTimeMillis(),
+                previousHash = null,
+                transactions = emptyList()
+            )
+
+            while (true) {
+                val nonce = (0..Long.MAX_VALUE).random()
+                val hash = calculateHash(block.index, block.timestamp, block.previousHash, block.transactions, nonce)
+                val minedBlock = block.copy(nonce = nonce, hash = hash)
+
+                log.debug("Mining genesis block with Nonce $nonce")
+
+                try {
+                    ConsensusType.ProofOfWork().validate(minedBlock, null)
+                    return minedBlock
+                } catch (_: InvalidBlockPOWException) {
+                    continue
+                }
+            }
         }
     }
 }
