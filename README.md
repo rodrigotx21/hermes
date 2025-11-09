@@ -4,7 +4,7 @@ Here’s how I’d structure it conceptually for *Hermes*, your Kotlin blockchai
 
 ---
 
-# **Hermes 🕊️**
+# **Hermes**
 *A lightweight, educational blockchain implementation in Kotlin.*
 
 ---
