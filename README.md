@@ -1,9 +1,3 @@
-Absolutely — that’s a great idea. A clean, professional **README.md** will give your project identity and clarity for collaborators.
-
-Here’s how I’d structure it conceptually for *Hermes*, your Kotlin blockchain:
-
----
-
 # **Hermes**
 *A lightweight, educational blockchain implementation in Kotlin.*
 
