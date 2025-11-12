@@ -1,18 +1,35 @@
 package pt.hermes.blockchain
 
-class Chain {
-    private val _chain = mutableMapOf<String, Block>()
-    private var _lastHash: String? = null
-    private var _lastIndex: Int? = null
+import pt.hermes.wallet.Wallet
+import java.util.concurrent.ConcurrentHashMap
+
+class Chain(
+    loadedChain: Map<String, Block>? = null
+) {
+    private val _chain: ConcurrentHashMap<String, Block> = ConcurrentHashMap(loadedChain ?: emptyMap())
+    private var _lastIndex: Int?
+    private var _lastHash: String?
+
+    init {
+        val latestBlock = _chain.values.maxByOrNull { it.index }
+        _lastIndex = latestBlock?.index
+        _lastHash = latestBlock?.hash
+    }
 
     val chain: List<Block>
-        get() = _chain.values.toList().sortedBy { - it.index }
+        get() = _chain.values.toList().sortedBy { it.index }
+
+    val chainAsMap: Map<String, Block>
+        get() = _chain.toMap()
 
     val latestBlock: Block?
         get() = if (_lastHash != null) _chain[_lastHash] else null
 
     val lastIndex: Int?
         get() = _lastIndex
+
+    val wallet: Wallet
+        get() = latestBlock?.wallet ?: Wallet()
 
     /**
      * Adds a new block to the chain.
