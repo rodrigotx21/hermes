@@ -8,6 +8,7 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.contentnegotiation.*
 import pt.hermes.consensus.ConsensusService
 import pt.hermes.network.NetworkService
+import pt.hermes.storage.StorageService
 
 fun main(args: Array<String>) {
     EngineMain.main(args)
@@ -26,14 +27,22 @@ fun Application.module() {
     val networkConfig = environment.config.config("ktor.network")
     val peers = networkConfig.property("peers").getList()
 
+    // Load State
+    val state = StorageService.load()
+
     // Initialize services
-    val network = NetworkService(address, peers)
+    val network = NetworkService(
+        address,
+        if (state?.network != null) (peers + state.network.peers.toList()) else peers,
+    )
     val consensus = ConsensusService()
-    val blockchain = BlockchainService(network, consensus)
+    val blockchain = BlockchainService(network, consensus, state?.chain)
+    val storage = StorageService(blockchain, network)
 
     configureRouting(
         blockchain,
         network,
-        consensus
+        consensus,
+        storage
     )
 }
