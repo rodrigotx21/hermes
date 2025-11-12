@@ -8,6 +8,7 @@ import io.ktor.server.routing.*
 import pt.hermes.blockchain.BlockchainService
 import pt.hermes.exception.DuplicateTransaction
 import pt.hermes.exception.InvalidBlockException
+import pt.hermes.network.ConnectionResponse
 import pt.hermes.network.Message
 import pt.hermes.network.NetworkService
 
@@ -28,7 +29,10 @@ fun Application.networkRouting(
                 val address = call.receive<String>()
                 network.addPeer(address)
 
-                return@post call.respond(HttpStatusCode.OK, "Connected to peer at $address")
+                val peers = network.peers.map { it.address }.toSet()
+                val response = ConnectionResponse(network.address, peers)
+
+                return@post call.respond(HttpStatusCode.OK)
             }
 
             post("/broadcast") {
