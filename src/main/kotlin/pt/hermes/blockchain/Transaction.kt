@@ -1,12 +1,15 @@
 package pt.hermes.blockchain
 
 import kotlinx.serialization.Serializable
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters
+import kotlin.io.encoding.Base64
 
 @Serializable
 data class Transaction(
     val sender: String,
+    val publicKey: String,
     val recipient: String,
-    val amount: Double,
+    val amount: Long,
     val timestamp: Long,
     val hash: String = calculateHash(sender, recipient, amount, timestamp)
 ) {
@@ -15,7 +18,7 @@ data class Transaction(
      *
      * @return true if the transaction is valid, false otherwise
      */
-    fun verifyStructure() {
+    fun validate() {
         // Basic validation checks
         if (amount <= 0)
             throw IllegalArgumentException("Transaction amount must be greater than 0")
@@ -29,6 +32,9 @@ data class Transaction(
         if (timestamp <= 0 || timestamp > System.currentTimeMillis())
             throw IllegalArgumentException("Invalid transaction timestamp")
 
+        if (!validPublicKey())
+            throw IllegalArgumentException("Invalid public key for the sender")
+
         if (!validHash())
             throw IllegalArgumentException("Invalid transaction hash")
     }
@@ -40,6 +46,15 @@ data class Transaction(
     fun validHash(): Boolean {
         val calculatedHash = calculateHash(sender, recipient, amount, timestamp)
         return calculatedHash == hash
+    }
+
+    /**
+     * Verifies the validity of the public key associated with the transaction.
+     *
+     * @return true if the public key is valid, false otherwise
+     */
+    fun validPublicKey(): Boolean {
+        return HASH.sha256(publicKey) == sender
     }
 
     companion object {
@@ -55,7 +70,7 @@ data class Transaction(
         fun calculateHash(
             sender: String,
             recipient: String,
-            amount: Double,
+            amount: Long,
             timestamp: Long
         ): String {
             val data = sender + recipient + amount.toString() + timestamp.toString()
