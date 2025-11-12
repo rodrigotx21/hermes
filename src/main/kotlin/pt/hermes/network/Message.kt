@@ -2,6 +2,7 @@ package pt.hermes.network
 
 import kotlinx.serialization.Serializable
 import pt.hermes.blockchain.Block
+import pt.hermes.blockchain.SignedTransaction
 import pt.hermes.blockchain.Transaction
 
 @Serializable
@@ -13,7 +14,7 @@ sealed class Message {
     data class NewBlock(val block: Block) : Message()
 
     @Serializable
-    data class NewTransaction(val transaction: Transaction) : Message()
+    data class NewTransaction(val transaction: SignedTransaction) : Message()
 
     @Serializable
     data class SyncTransactions(val transactionHashes: Set<String>) : Message()
