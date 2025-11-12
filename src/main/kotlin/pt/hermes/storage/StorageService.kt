@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory
 import pt.hermes.blockchain.Block
 import pt.hermes.blockchain.BlockchainService
 import pt.hermes.blockchain.SignedTransaction
-import pt.hermes.blockchain.Transaction
 import pt.hermes.consensus.BlockchainState
 import pt.hermes.consensus.NetworkState
 import pt.hermes.consensus.NodeState
