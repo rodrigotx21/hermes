@@ -4,16 +4,18 @@ import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import pt.hermes.consensus.ConsensusType
 import pt.hermes.exception.InvalidBlockPOWException
+import pt.hermes.wallet.Wallet
 
 @Serializable
 data class Block(
     val index: Int,
     val timestamp: Long,
-    val previousHash: String? = null,
-    val transactions: List<Transaction>,
-    val transactionsHash: String = HASH.merkleRoot(transactions.map { it.hash }),
+    val previousHash: String?,
+    val transactions: List<SignedTransaction>,
+    val transactionsHash: String = HASH.merkleRoot(transactions.map { it.transaction.hash }),
     val nonce: Long = 0,
-    val hash: String = calculateHash(index, timestamp, previousHash, transactions, nonce)
+    val hash: String = calculateHash(index, timestamp, previousHash, transactions, nonce),
+    val wallet: Wallet
 ) {
     fun validateStructure() {
         if (index < 0)
@@ -30,7 +32,7 @@ data class Block(
 
     companion object {
         private val log = LoggerFactory.getLogger(Block::class.java)
-        /**
+/*       /**
          * Creates a new Block instance by computing its hash from the provided core fields.
          *
          * This factory function computes the block's SHA-256 digest using [calculateHash]
@@ -46,6 +48,10 @@ data class Block(
         fun create(index: Int, timestamp: Long, previousHash: String?, transactions: List<Transaction>, nonce: Long): Block {
             val hash = calculateHash(index, timestamp, previousHash, transactions, nonce)
             return Block(index, timestamp, previousHash, transactions, nonce, hash)
+        }*/
+
+        fun calculateTransactionsHash(transactions: List<SignedTransaction>): String {
+            return HASH.merkleRoot(transactions.map { it.transaction.hash })
         }
 
 
@@ -61,31 +67,32 @@ data class Block(
             index: Int,
             timestamp: Long,
             previousHash: String?,
-            transactions: List<Transaction>,
+            transactions: List<SignedTransaction>,
             nonce: Long
         ): String {
             val input = index.toString() +
                     timestamp.toString() +
                     previousHash +
-                    transactions.joinToString { it.toString() } +
+                    calculateTransactionsHash(transactions) +
                     nonce.toString()
             return HASH.sha256(input)
         }
 
         /**
-         * Mines the genesis block (the first block in the blockchain).
+         * Mines a block.
          *
          * This function repeatedly generates nonces and computes hashes until
-         * it finds a valid genesis block that satisfies the proof-of-work criteria.
+         * it finds a valid block that satisfies the proof-of-work criteria.
          *
-         * @return the mined genesis [Block]
+         * @return the mined [Block]
          */
-        fun mineGenesisBlock(): Block {
+        fun mine(lastBlock: Block?, transactions: List<SignedTransaction>, wallet: Wallet): Block {
             val block = Block(
-                index = 0,
+                index = (lastBlock?.index ?: 0) + 1,
                 timestamp = System.currentTimeMillis(),
-                previousHash = null,
-                transactions = emptyList()
+                previousHash = lastBlock?.hash,
+                transactions = transactions,
+                wallet = wallet
             )
 
             while (true) {
@@ -93,10 +100,10 @@ data class Block(
                 val hash = calculateHash(block.index, block.timestamp, block.previousHash, block.transactions, nonce)
                 val minedBlock = block.copy(nonce = nonce, hash = hash)
 
-                log.debug("Mining genesis block with Nonce $nonce")
+                log.debug("Trying block ${block.index} with Nonce $nonce")
 
                 try {
-                    ConsensusType.ProofOfWork().validate(minedBlock, null)
+                    ConsensusType.ProofOfWork().validate(minedBlock, lastBlock)
                     return minedBlock
                 } catch (_: InvalidBlockPOWException) {
                     continue
