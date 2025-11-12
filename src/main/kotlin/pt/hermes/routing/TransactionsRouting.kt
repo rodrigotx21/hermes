@@ -6,7 +6,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import pt.hermes.blockchain.BlockchainService
-import pt.hermes.blockchain.Transaction
+import pt.hermes.blockchain.TransactionToSign
 import pt.hermes.exception.DuplicateTransaction
 
 fun Application.transactionsRouting(
@@ -27,7 +27,7 @@ fun Application.transactionsRouting(
                         return@get
                     }
 
-                    val txs = blockchain.pool.values.filter { it.sender == sender }
+                    val txs = blockchain.pool.values.filter { it.transaction.sender == sender }
                     call.respond(HttpStatusCode.OK, txs)
                 }
 
@@ -38,23 +38,29 @@ fun Application.transactionsRouting(
                         return@get
                     }
 
-                    val txs = blockchain.pool.values.filter { it.recipient == recipient }
+                    val txs = blockchain.pool.values.filter { it.transaction.recipient == recipient }
                     call.respond(HttpStatusCode.OK, txs)
                 }
             }
 
             post {
-                val tx = call.receive<Transaction>()
+                val tx = call.receive<TransactionToSign>()
 
                 try {
-                    blockchain.addTransaction(tx)
+                    // Sign transaction
+                    val signedTx = tx.sign()
+
+                    // Add to pool
+                    blockchain.addTransaction(signedTx)
+
+                    call.respond(HttpStatusCode.OK)
                 } catch (e: IllegalArgumentException) {
                     call.respond(HttpStatusCode.BadRequest, e.message ?: "")
                 } catch (_: DuplicateTransaction) {
                     call.respond(HttpStatusCode.Conflict, "Transaction already exists")
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, e.message ?: "")
                 }
-
-                call.respond(HttpStatusCode.OK)
             }
 
 
