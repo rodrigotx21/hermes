@@ -1,8 +1,6 @@
 package pt.hermes.blockchain
 
 import kotlinx.serialization.Serializable
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters
-import kotlin.io.encoding.Base64
 
 @Serializable
 data class Transaction(
