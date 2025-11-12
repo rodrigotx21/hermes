@@ -42,7 +42,7 @@ data class Transaction(
      * @return true if the hash matches, false otherwise
      */
     fun validHash(): Boolean {
-        val calculatedHash = calculateHash(sender, recipient, amount, timestamp)
+        val calculatedHash = calculateHash(this)
         return calculatedHash == hash
     }
 
