@@ -33,6 +33,7 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:$ktor_version")
     implementation("io.ktor:ktor-serialization:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.82")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:$logback_version")
