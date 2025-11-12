@@ -4,9 +4,11 @@ import org.slf4j.LoggerFactory
 import pt.hermes.exception.DuplicateTransaction
 import java.util.concurrent.ConcurrentHashMap
 
-class Mempool {
+class Mempool(
+    loadedPoll: Map<String, SignedTransaction>? = null
+) {
     private val log = LoggerFactory.getLogger(Mempool::class.java)
-    private val _transactions = ConcurrentHashMap<String, Transaction>()
+    private val _transactions = ConcurrentHashMap(loadedPoll ?: emptyMap())
 
     /**
      * Returns the number of transactions currently in the mempool.
@@ -22,7 +24,7 @@ class Mempool {
      * @param transaction the Transaction to add; its `hash` is used as the key
      * @throws DuplicateTransaction if a transaction with the same hash already exists
      */
-    fun add(transaction: Transaction) {
+    fun add(transaction: SignedTransaction) {
         if (_transactions.putIfAbsent(transaction.hash, transaction) == null) {
             log.info("Transaction added to mempool: ${transaction.hash}")
         } else {
@@ -54,7 +56,7 @@ class Mempool {
      *
      * @return a set of transaction hashes
      */
-    val transactions: Map<String, Transaction>
+    val transactions: Map<String, SignedTransaction>
         get() = _transactions
 
     /**
@@ -63,7 +65,7 @@ class Mempool {
      * @param hashes a set of transaction hashes to retrieve
      * @return a map of transaction hashes to Transaction objects
      */
-    fun getTransactions(hashes: Set<String>): Map<String, Transaction> {
+    fun getTransactions(hashes: Set<String>): Map<String, SignedTransaction> {
         return _transactions.filterKeys { it in hashes }
     }
 
