@@ -30,7 +30,7 @@ data class Peer(
     }
 
     suspend fun connect(): MutableSet<String> {
-        val response = client.post("$address/connect") {
+        val response = client.post("$address/network/connect") {
             setBody(myAddress)
             expectSuccess = true
         }.body<ConnectionResponse>()
