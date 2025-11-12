@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import pt.hermes.consensus.NetworkState
 
 class NetworkService(
     val address: String,
@@ -15,6 +16,10 @@ class NetworkService(
 
     val peers = mutableSetOf<Peer>()
 
+    val state: NetworkState
+        get() = NetworkState(
+            peers = peers.map { it.address }.toSet()
+        )
 
     init {
         log.info("Initializing network service")
