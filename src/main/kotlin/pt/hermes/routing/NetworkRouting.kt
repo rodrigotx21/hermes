@@ -32,7 +32,7 @@ fun Application.networkRouting(
                 val peers = network.peers.map { it.address }.toSet()
                 val response = ConnectionResponse(network.address, peers)
 
-                return@post call.respond(HttpStatusCode.OK)
+                return@post call.respond(HttpStatusCode.OK, response)
             }
 
             post("/broadcast") {
