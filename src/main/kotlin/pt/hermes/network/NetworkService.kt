@@ -34,7 +34,7 @@ class NetworkService(
      * If no peers are found, the node will act as the first one in the network.
      */
     private suspend fun connect(addresses: List<String>) {
-        val seen = peers.map { peer -> peer.address }.toMutableSet()
+        val seen = mutableSetOf<String>()
         val possibleAddresses = ArrayDeque(addresses)
 
         while (possibleAddresses.isNotEmpty()) {
@@ -51,17 +51,16 @@ class NetworkService(
                 log.debug("Connected to peer at ${peer.address}")
 
                 // Add new addresses to the queue
-                newAddr.removeIf { seen.contains(address) }
-                possibleAddresses.addAll(newAddr.map { address })
+                newAddr.removeIf { seen.contains(it) }
+                possibleAddresses.addAll(newAddr)
+                peers.add(peer)
             } catch (e: Exception) {
                 log.warn("Failed to connect to peer at $peerAddress: ${e.message}")
             }
         }
 
         val found = peers.isNotEmpty()
-        if (found) {
-            log.info("Connected to peers")
-        } else {
+        if (!found) {
             log.warn("No peers found. Initializing as the first node.")
         }
     }
