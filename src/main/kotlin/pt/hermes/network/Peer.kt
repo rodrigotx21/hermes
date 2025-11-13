@@ -10,7 +10,9 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import pt.hermes.blockchain.Block
 import pt.hermes.blockchain.Transaction
+import pt.hermes.network.Message.TipResponse
 
 val client = HttpClient(CIO) {
     install(ContentNegotiation) {
@@ -41,7 +43,7 @@ data class Peer(
     }
 
     suspend fun send(message: Message) {
-        client.post("$address/") {
+        client.post("$address/network/broadcast") {
             contentType(ContentType.Application.Json)
             setBody(message)
             expectSuccess = true
@@ -49,24 +51,30 @@ data class Peer(
     }
 
     /**
-     * Retrieves the set of pending transaction hashes from the peer.
+     * Retrieves the latest block's index and hash from the peer.
      *
-     * @return A set of transaction hashes.
+     * @return a TipResponse containing the latest block's index and hash
      */
-    suspend fun getPendingTransactions(): Set<String> {
-        val response = client.get("$address/transactions") {
+    suspend fun tip(): TipResponse {
+        val response = client.get("$address/blocks/tip") {
             expectSuccess = true
-        }.body<Set<String>>()
+        }.body<TipResponse>()
 
         return response
     }
 
-    suspend fun getTransactions(hashes: Set<String>): Map<String, Transaction> {
-        val response = client.get("$address/transactions") {
-            setBody(hashes)
+    /**
+     * Retrieves blocks from the peer starting from the specified index.
+     *
+     * @param fromIndex the index from which to start retrieving blocks
+     * @return a list of blocks starting from the specified index
+     */
+    suspend fun blocks(fromIndex: Int = 0): List<Block> {
+        val response = client.get("$address/blocks/from/$fromIndex") {
             expectSuccess = true
-        }.body<Map<String, Transaction>>()
+        }.body<List<Block>>()
 
         return response
     }
+
 }
