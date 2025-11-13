@@ -3,7 +3,6 @@ package pt.hermes.network
 import kotlinx.serialization.Serializable
 import pt.hermes.blockchain.Block
 import pt.hermes.blockchain.SignedTransaction
-import pt.hermes.blockchain.Transaction
 
 @Serializable
 sealed class Message {
@@ -24,4 +23,10 @@ sealed class Message {
 
     @Serializable
     data class ChainResponse(val chain: List<Block>) : Message()
+
+    @Serializable
+    data class TipResponse(val index: Int, val hash: String) : Message()
+
+    @Serializable
+    data class MissingBlocks(val blocks: List<Block>) : Message()
 }
