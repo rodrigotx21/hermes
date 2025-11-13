@@ -11,7 +11,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import pt.hermes.blockchain.Block
-import pt.hermes.blockchain.Transaction
 import pt.hermes.network.Message.TipResponse
 
 val client = HttpClient(CIO) {
