@@ -2,14 +2,21 @@ package pt.hermes.blockchain
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import pt.hermes.consensus.BlockchainState
 import pt.hermes.consensus.ConsensusService
 import pt.hermes.exception.InsufficientFundsException
 import pt.hermes.network.Message
+import pt.hermes.network.Message.MissingBlocks
+import pt.hermes.network.Message.TipResponse
 import pt.hermes.network.NetworkService
+import pt.hermes.network.Peer
 import pt.hermes.wallet.Wallet
+import java.util.Timer
+import kotlin.text.compareTo
 
 class BlockchainService(
     private val network: NetworkService,
@@ -155,6 +162,7 @@ class BlockchainService(
 
     /**
      * Adds a new block to the blockchain after verifying its validity.
+     * Broadcasts the new block to the peers
      *
      * @param block the block to be added
      */
@@ -178,4 +186,73 @@ class BlockchainService(
     }
 
     private fun validateBlock(block: Block) = consensus.validateBlock(block, _chain, _pool, last = true)
+
+    /**
+     * Retrieves the latest block's index and hash.
+     *
+     * @return a pair containing the latest block's index and hash
+     */
+    fun getTip(): TipResponse {
+        val latestBlock = chain.last()
+        return TipResponse(
+            index = latestBlock.index,
+            hash = latestBlock.hash
+        )
+    }
+
+    /**
+     * Synchronizes blockchain with all peers
+     */
+    fun sync() {
+        CoroutineScope(Dispatchers.IO).launch {
+            while (isActive) {
+                delay(30_000)
+                log.info("Synchronizing chain with peers...")
+
+                network.peers.forEach {
+                    try {
+                        syncWithPeer(it)
+                    } catch (_: Exception) {
+                        // Ignore
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Synchronizes the local blockchain with a peer.
+     *
+     * @param peer the peer to synchronize with
+     */
+    suspend fun syncWithPeer(peer: Peer) {
+        val peerTip = peer.tip()
+        log.debug("Syncing with peer ${peer.address}: peer tip index=${peerTip.index}, hash=${peerTip.hash}")
+
+        val localTip = getTip()
+
+        // Compare Indexes
+        if (peerTip.index == localTip.index) return
+        if (peerTip.index < localTip.index) {
+            log.debug("Local chain is longer than peer ${peer.address}, sending blocks.")
+
+            // Send missing blocks
+            peer.send(
+                MissingBlocks(
+                    blocks = chain.subList(peerTip.index + 1, chain.size)
+                )
+            )
+        }
+
+        if (peerTip.index > localTip.index) {
+            log.info("Local chain is shorter than peer ${peer.address}, requesting blocks.")
+
+            // Request missing blocks
+            val blocks = peer.blocks(localTip.index + 1)
+            blocks.forEach { addBlock(it) }
+
+            // TODO: Handle forks and different hashes
+        }
+    }
+
 }
