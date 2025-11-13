@@ -5,7 +5,6 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import pt.hermes.blockchain.BlockchainService
-import pt.hermes.network.Message.TipResponse
 
 fun Application.blockchainRouting(
     blockchain: BlockchainService
